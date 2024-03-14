@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pusheen Run</title>
+    <link rel="stylesheet" href="style.css">
+    
+</head>
+<body>
+    <canvas id="canvas" width="800" height="400"></canvas>
+    
+    <script>
+        var canvas = document.getElementById("canvas");
+        var ctx = canvas.getContext("2d");
+        
+
+        var gameRunning = false;
+        var animationId;
+        
+        var pusheen = {
+            x: 50,
+            y: 300,
+            width: 50,
+            height: 50,
+            velocityY: 0,
+            jumpPower: -15,
+            gravity: 0.5,
+            isJumping: false,
+            image: new Image()
+        };
+        pusheen.image.src = 'pusheen.png';
+    
+        var obstacles = [];
+        var obstacleSpeed = 4;
+        var frameCounter = 0;
+
+        function checkCollision(obstacle) {
+            return pusheen.x < obstacle.x + obstacle.width &&
+                   pusheen.x + pusheen.width > obstacle.x &&
+                   pusheen.y < obstacle.y + obstacle.height &&
+                   pusheen.height + pusheen.y > obstacle.y;
+        }
+    
+        function drawpusheen() {
+            if (pusheen.image.complete) {
+                ctx.drawImage(pusheen.image, pusheen.x, pusheen.y, pusheen.width, pusheen.height);
+            }
+        }
+    
+        function drawObstacles() {
+            if (gameRunning && frameCounter % 120 === 0) {
+                var height = 20 + Math.random() * 30;
+                obstacles.push({x: canvas.width, y: canvas.height - height, width: 20, height: height});
+            }
+            obstacles = obstacles.filter(function(obstacle) {
+                return obstacle.x + obstacle.width > 0;
+            });
+            obstacles.forEach(function(obstacle) {
+                obstacle.x -= obstacleSpeed;
+                ctx.fillStyle = 'green';
+                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+                if (checkCollision(obstacle)) {
+                    stopGame();
+                }
+            });
+        }
+    
+        function updateGame() {
+            if (pusheen.isJumping) {
+                pusheen.velocityY += pusheen.gravity;
+                pusheen.y += pusheen.velocityY;
+                if (pusheen.y > canvas.height - pusheen.height) {
+                    pusheen.isJumping = false;
+                    pusheen.y = canvas.height - pusheen.height;
+                    pusheen.velocityY = 0;
+                }
+            }
+            frameCounter++;
+        }
+    
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawpusheen();
+            drawObstacles();
+            updateGame();
+            if (gameRunning) {
+                animationId = requestAnimationFrame(gameLoop);
+            }
+        }
+    
+        function startGame() {
+            if (!gameRunning) {
+                gameRunning = true;
+                obstacles = [];
+                frameCounter = 0;
+                gameLoop();
+            }
+        }
+    
+        function stopGame() {
+            gameRunning = false;
+            cancelAnimationFrame(animationId);
+        }
+
+        document.addEventListener("keydown", function(event) {
+            if (event.key === " " && !gameRunning) {
+                startGame();
+            } else if (event.key === " " && !pusheen.isJumping) {
+                pusheen.isJumping = true;
+                pusheen.velocityY = pusheen.jumpPower;
+            }
+        });
+    </script>
+</body>
+</html>
